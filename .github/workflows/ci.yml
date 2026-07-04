@@ -22,7 +22,7 @@ jobs:
     name: fmt, clippy, test, docs
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
@@ -43,7 +43,7 @@ jobs:
     name: no_std build (bare metal)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: thumbv7em-none-eabihf
@@ -54,7 +54,7 @@ jobs:
     name: minimum supported Rust (1.81)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@1.81.0
       - run: cargo build --all-features
 
@@ -62,7 +62,7 @@ jobs:
     name: Conformance vectors
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Download shared conformance vectors
         run: curl -sSfL -o vectors.jsonl https://raw.githubusercontent.com/firechip/cobs-conformance/v1.0.0/vectors/vectors.jsonl
