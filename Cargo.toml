@@ -12,6 +12,9 @@ documentation = "https://docs.rs/cobs_codec_rs"
 readme = "README.md"
 keywords = ["cobs", "serial", "framing", "no-std", "embedded"]
 categories = ["encoding", "embedded", "no-std"]
+# The fuzz crate is a dev-only nested cargo-fuzz workspace; keep it out of the
+# published crate.
+exclude = ["/fuzz"]
 
 [package.metadata.docs.rs]
 # Document every feature, and load KaTeX so the overhead math renders. KaTeX is

@@ -1,0 +1,39 @@
+[package]
+name = "cobs_codec_rs-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+
+[dependencies.cobs_codec_rs]
+path = ".."
+
+# Detach from the parent crate so `cargo build`/`cargo test` on the library never
+# tries to build the fuzz targets (which require the nightly toolchain).
+[workspace]
+
+[[bin]]
+name = "decode_total"
+path = "fuzz_targets/decode_total.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "roundtrip"
+path = "fuzz_targets/roundtrip.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "sentinel"
+path = "fuzz_targets/sentinel.rs"
+test = false
+doc = false
+bench = false

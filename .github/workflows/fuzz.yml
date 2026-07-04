@@ -1,0 +1,32 @@
+name: Fuzz
+
+# Short fuzzing bursts on every push to main, plus a longer weekly run. The
+# stable `cargo test` suite (tests/robustness.rs) already smoke-fuzzes the
+# decoders; this runs the libFuzzer targets under the nightly toolchain.
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz:
+    name: cargo-fuzz ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [decode_total, roundtrip, sentinel]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@nightly
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --locked
+      - name: Fuzz ${{ matrix.target }}
+        run: |
+          time=$([ "${{ github.event_name }}" = "schedule" ] && echo 300 || echo 60)
+          cargo fuzz run ${{ matrix.target }} -- -max_total_time=$time
