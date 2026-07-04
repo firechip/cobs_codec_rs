@@ -1,6 +1,6 @@
 [package]
 name = "cobs_codec_rs"
-version = "1.2.0"
+version = "1.3.0"
 edition = "2024"
 rust-version = "1.85"
 description = "Consistent Overhead Byte Stuffing (COBS) and COBS/R codec: no_std, zero-dependency, for zero-free framing of serial and packet byte streams."

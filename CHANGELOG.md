@@ -3,6 +3,27 @@
 All notable changes to this crate are documented here. This project adheres to
 [Semantic Versioning](https://semver.org).
 
+## 1.3.0
+
+### Added
+
+- **COBS/R in-place decoding**: `decode_in_place` and
+  `decode_in_place_with_sentinel` for the reduced codec, decoding within the
+  caller's buffer and returning the decoded length (COBS/R decoding never
+  expands the data).
+- **Optional `serde` and `defmt` derives** for `DecodeError`, behind the new
+  `serde` and `defmt` feature flags, for serialising or logging decode errors on
+  hosts and embedded targets.
+
+### Tooling & tests
+
+- Added a `criterion` throughput benchmark (`benches/throughput.rs`).
+- Added fuzzing: `cargo-fuzz` targets plus a stable, dependency-free robustness
+  test that runs in ordinary CI.
+- Added a Protobuf + COBS framing example (`examples/protobuf_cobs.rs`).
+- Extended the conformance suite to also check the configurable-sentinel and
+  decode-error vectors from firechip/cobs-conformance.
+
 ## 1.2.0
 
 ### Changed
