@@ -22,17 +22,31 @@ exclude = ["/fuzz"]
 all-features = true
 rustdoc-args = ["--html-in-header", "docs/katex-header.html"]
 
+[dependencies]
+# Both are OPTIONAL and OFF by default, so the default build stays
+# zero-dependency and `no_std`. `serde` derives (de)serialization for the public
+# error type; `defmt` derives its `Format` for embedded logging. `serde` is
+# pulled with `default-features = false` so it keeps working in `no_std`.
+serde = { version = "1", optional = true, default-features = false, features = ["derive"] }
+defmt = { version = "1", optional = true }
+
 [features]
 default = ["std"]
 # Enables the `*_to_vec` convenience functions and framing that allocate.
 alloc = []
 # Enables `std` (implies `alloc`). Reserved for future std-only conveniences.
 std = ["alloc"]
+# Optional ecosystem hooks; both stay off in the default build.
+serde = ["dep:serde"]
+defmt = ["dep:defmt"]
 
 [dev-dependencies]
 # Real Protocol Buffers, used only by the `protobuf_cobs` example. Dev-only, so
 # the published crate stays dependency-free for library users.
 prost = "0.14"
+# Used only by `tests/derives.rs` to round-trip an error through JSON and prove
+# the optional `serde` derive works.
+serde_json = "1"
 
 [lints.rust]
 missing_docs = "warn"

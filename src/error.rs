@@ -3,7 +3,13 @@
 use core::fmt;
 
 /// An error returned when decoding fails.
+///
+/// `serde::{Serialize, Deserialize}` and `defmt::Format` implementations are
+/// available behind the optional `serde` and `defmt` features, respectively;
+/// both are off by default.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[non_exhaustive]
 pub enum DecodeError {
     /// A zero (`0x00`) byte appeared in the encoded input; a valid COBS stream

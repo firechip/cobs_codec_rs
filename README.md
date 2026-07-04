@@ -33,6 +33,8 @@ USB, TCP and other byte streams — ideal for embedded and robotics protocols.
   and `*_to_vec` conveniences.
 - **`const fn`** size helpers (`max_encoded_len`, `encoding_overhead`) for
   compile-time buffer sizing.
+- **Optional `serde` / `defmt`** — off by default; enable the matching feature
+  to derive `Serialize`/`Deserialize` or `defmt::Format` for `DecodeError`.
 
 ## Install
 
