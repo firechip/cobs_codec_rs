@@ -1,0 +1,52 @@
+name: Bug report
+description: Report incorrect encoding/decoding or another defect in cobs_codec_rs.
+title: "[bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: >
+        Thanks for filing a bug! A minimal, byte-level reproduction is the most
+        helpful thing you can provide.
+  - type: input
+    id: version
+    attributes:
+      label: cobs_codec_rs version
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: input
+    id: rustc
+    attributes:
+      label: Rust version (rustc --version) and target
+      placeholder: "1.92.0, thumbv7em-none-eabihf"
+    validations:
+      required: true
+  - type: dropdown
+    id: features
+    attributes:
+      label: Which feature set?
+      options:
+        - "default (std)"
+        - "alloc (no std)"
+        - "no default features (no_std, no alloc)"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Include the input bytes (hex), what you expected, and what you got.
+      placeholder: |
+        Input:    0x11 0x00 0x22
+        Expected: 0x02 0x11 0x02 0x22
+        Actual:   ...
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      render: rust
+    validations:
+      required: false

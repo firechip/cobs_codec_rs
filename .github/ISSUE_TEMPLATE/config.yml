@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: docs.rs API documentation
+    url: https://docs.rs/cobs_codec_rs
+    about: Full API reference for the crate.
+  - name: Conformance vectors (all languages)
+    url: https://github.com/firechip/cobs-conformance
+    about: The shared COBS/COBS-R test vectors this crate is verified against.

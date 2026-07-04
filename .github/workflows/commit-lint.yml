@@ -1,0 +1,39 @@
+name: Commit lint
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  conventional-commits:
+    name: Conventional Commits
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check commit subjects follow Conventional Commits
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          types='build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test'
+          pattern="^(${types})(\([a-z0-9._/-]+\))?!?: .+"
+          fail=0
+          for sha in $(git rev-list --no-merges "$BASE..$HEAD"); do
+            subject=$(git log -1 --format=%s "$sha")
+            if printf '%s' "$subject" | grep -qE "$pattern"; then
+              echo "ok:   $subject"
+            else
+              echo "::error::Not a Conventional Commit: $subject"
+              fail=1
+            fi
+          done
+          if [ "$fail" -ne 0 ]; then
+            echo "Commit subjects must be Conventional Commits: type(scope): subject"
+            echo "Allowed types: ${types//|/, }"
+            exit 1
+          fi

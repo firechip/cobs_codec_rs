@@ -1,0 +1,9 @@
+# Definition of Done, shown by `tbdflow commit` before each commit.
+checklist:
+  - "`cargo fmt --check` produces no changes."
+  - "`cargo clippy --all-targets --all-features -- -D warnings` is clean."
+  - "`cargo clippy --no-default-features -- -D warnings` is clean (no_std)."
+  - "`cargo test` passes."
+  - "New behaviour is covered by tests (golden vectors for codec changes)."
+  - "CHANGELOG.md is updated for user-visible changes."
+  - "The crate still conforms to the firechip/cobs-conformance vectors."

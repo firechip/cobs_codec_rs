@@ -1,0 +1,95 @@
+# cobs_codec_rs
+
+[![CI](https://github.com/firechip/cobs_codec_rs/actions/workflows/ci.yml/badge.svg)](https://github.com/firechip/cobs_codec_rs/actions/workflows/ci.yml)
+[![crates.io](https://img.shields.io/crates/v/cobs_codec_rs.svg)](https://crates.io/crates/cobs_codec_rs)
+[![docs.rs](https://img.shields.io/docsrs/cobs_codec_rs)](https://docs.rs/cobs_codec_rs)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+`#![no_std]`, dependency-free **Consistent Overhead Byte Stuffing (COBS)** and
+**COBS/R** for Rust — the Rust member of the Firechip COBS family (alongside the
+Dart [`cobs_codec`](https://pub.dev/packages/cobs_codec) and the Kotlin
+[`cobs_codec_kt`](https://github.com/firechip/cobs_codec_kt)), verified
+byte-identical against the shared
+[conformance vectors](https://github.com/firechip/cobs-conformance).
+
+COBS encodes an arbitrary byte sequence into one that contains no zero (`0x00`)
+byte, at a small and *predictable* cost: at most one extra byte per 254 bytes,
+plus one. That makes a single `0x00` a reliable packet delimiter for serial/UART,
+USB, TCP and other byte streams — ideal for embedded and robotics protocols.
+
+## Features
+
+- **Basic COBS** and **COBS/R (Reduced)** encode/decode.
+- **`no_std` and zero dependencies** — the core `encode`/`decode` work on
+  caller-provided slices, allocating nothing.
+- **`alloc` conveniences** (`*_to_vec`) and a streaming
+  [`FrameDecoder`](https://docs.rs/cobs_codec_rs/latest/cobs_codec_rs/framing/struct.FrameDecoder.html)
+  for `0x00`-delimited serial links, behind the default `std`/`alloc` features.
+- **`const fn`** size helpers (`max_encoded_len`, `encoding_overhead`) for
+  compile-time buffer sizing.
+
+## Install
+
+```toml
+[dependencies]
+cobs_codec_rs = "1.0"
+
+# no_std, no allocator:
+# cobs_codec_rs = { version = "1.0", default-features = false }
+```
+
+## Usage
+
+```rust
+use cobs_codec_rs::{cobs, cobsr};
+
+// With alloc (default):
+let encoded = cobs::encode_to_vec(&[0x11, 0x22, 0x00, 0x33]);
+assert_eq!(encoded, [0x03, 0x11, 0x22, 0x02, 0x33]); // no 0x00
+assert_eq!(cobs::decode_to_vec(&encoded).unwrap(), [0x11, 0x22, 0x00, 0x33]);
+
+// COBS/R often saves the trailing overhead byte:
+assert_eq!(cobsr::encode_to_vec(b"12345"), b"51234"); // same length as input
+```
+
+`no_std`, into a fixed buffer:
+
+```rust
+use cobs_codec_rs::{cobs, max_encoded_len};
+
+let src = [0x11, 0x00, 0x22];
+let mut buf = [0u8; max_encoded_len(3)];
+let n = cobs::encode(&src, &mut buf);
+assert_eq!(&buf[..n], &[0x02, 0x11, 0x02, 0x22]);
+```
+
+Reading a delimited serial stream (needs `alloc`):
+
+```rust
+use cobs_codec_rs::framing::{frame_to_vec, FrameDecoder};
+
+let mut rx = FrameDecoder::new().max_frame_len(4096);
+// `chunk` is any &[u8] read from the link; chunks need not align with frames.
+# let chunk = frame_to_vec(&[0x01, 0x02]);
+rx.push(&chunk, |frame| match frame {
+    Ok(packet) => { /* handle packet */ }
+    Err(err)   => { /* corrupt frame; keep receiving */ let _ = err; }
+});
+```
+
+## Overhead
+
+COBS overhead is data-independent: at most `⌈n / 254⌉` extra bytes for `n` input
+bytes (and always ≥ 1). Compare escape-based schemes (PPP/SLIP), whose worst case
+*doubles* the packet.
+
+## Background
+
+Stuart Cheshire and Mary Baker, "Consistent Overhead Byte Stuffing",
+*IEEE/ACM Transactions on Networking*, Vol. 7, No. 2, April 1999. **COBS/R** is a
+variant by Craig McQueen.
+
+## License
+
+MIT © 2026 Alexander Salas Bastidas ([Firechip](https://firechip.dev)). See
+[LICENSE](LICENSE).
