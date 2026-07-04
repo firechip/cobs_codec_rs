@@ -169,6 +169,82 @@ pub fn decode_with_sentinel(
     Ok(write_index)
 }
 
+/// Decodes COBS/R data in place, overwriting `buf` with the decoded output and
+/// returning its length. The decoded bytes occupy `buf[..len]`.
+///
+/// This needs no output buffer: COBS/R decoding never expands, so the write
+/// position always trails the read position. As in the slice [`decode`], a
+/// length code that points past the end of the input is not an error but the
+/// reduced final block, whose data byte is the code value itself; that byte is
+/// appended onto a buffer position that has already been read, so it never
+/// clobbers unread input.
+///
+/// # Errors
+///
+/// Returns [`DecodeError::ZeroByte`] if `buf` contains a `0x00` byte.
+/// [`DecodeError::OutputTooSmall`] is never returned.
+pub fn decode_in_place(buf: &mut [u8]) -> Result<usize, DecodeError> {
+    decode_in_place_with_sentinel(buf, 0)
+}
+
+/// Decodes COBS/R data that was encoded with an arbitrary `sentinel` byte in
+/// place, overwriting `buf` with the decoded output and returning its length.
+/// `sentinel == 0` is identical to [`decode_in_place`].
+///
+/// # Errors
+///
+/// Returns [`DecodeError::ZeroByte`] if `buf` contains the `sentinel` byte.
+/// [`DecodeError::OutputTooSmall`] is never returned.
+pub fn decode_in_place_with_sentinel(buf: &mut [u8], sentinel: u8) -> Result<usize, DecodeError> {
+    let src_len = buf.len();
+    if src_len == 0 {
+        return Ok(0);
+    }
+
+    let mut write_index = 0;
+    let mut index = 0;
+
+    loop {
+        let code = buf[index] ^ sentinel;
+        if code == 0 {
+            return Err(DecodeError::ZeroByte { index });
+        }
+        index += 1;
+        let block_end = index + usize::from(code) - 1;
+        let copy_end = block_end.min(src_len);
+        while index < copy_end {
+            let byte = buf[index] ^ sentinel;
+            if byte == 0 {
+                return Err(DecodeError::ZeroByte { index });
+            }
+            // write_index < index throughout, so this never clobbers unread
+            // input.
+            buf[write_index] = byte;
+            write_index += 1;
+            index += 1;
+        }
+        match block_end.cmp(&src_len) {
+            Ordering::Greater => {
+                // Reduced encoding: the length code was really the final data
+                // byte. All input is consumed (index == src_len), so this write
+                // lands on an already-read byte.
+                buf[write_index] = code;
+                write_index += 1;
+                break;
+            }
+            Ordering::Less => {
+                if code < 0xFF {
+                    buf[write_index] = 0;
+                    write_index += 1;
+                }
+            }
+            Ordering::Equal => break,
+        }
+    }
+
+    Ok(write_index)
+}
+
 /// Encodes `src` with COBS/R, returning a newly allocated [`Vec`].
 #[cfg(feature = "alloc")]
 #[must_use]

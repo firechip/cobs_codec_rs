@@ -96,6 +96,63 @@ fn decode_in_place_matches_slice_decode() {
     }
 }
 
+#[test]
+fn cobsr_decode_in_place_matches_slice_decode() {
+    // The in-place decoder must agree with the slice decoder on both the success
+    // value and the error, byte for byte, for every input.
+    fn check(encoded: &[u8], sentinel: u8) {
+        let slice = cobsr::decode_to_vec_with_sentinel(encoded, sentinel);
+        let mut buf = encoded.to_vec();
+        let in_place =
+            cobsr::decode_in_place_with_sentinel(&mut buf, sentinel).map(|n| buf[..n].to_vec());
+        assert_eq!(
+            slice, in_place,
+            "encoded={encoded:02x?} sentinel={sentinel:#04x}"
+        );
+    }
+
+    // Golden COBS/R encodings, including reduced final blocks (length code past
+    // the end), high length codes, and an embedded zero.
+    let golden: &[&[u8]] = &[
+        &[0x01], // empty
+        &[0x02], // reduced single byte
+        &[0x03],
+        &[0x7E],
+        &[0xFE],
+        &[0xFF],                         // reduced, max code past end
+        &[0x02, 0x01],                   // non-reduced single byte
+        &[0x03, 0x61, 0x02],             // "a", 0x02 (non-reduced)
+        &[0x03, 0x61],                   // "a", 0x03 (reduced)
+        &[0xFF, 0x61],                   // "a", 0xFF (reduced)
+        &[0x35, 0x31, 0x32, 0x33, 0x34], // "12345" reduced
+        &[0x06, 0x31, 0x32, 0x33, 0x34, 0x35, 0x39, 0x36, 0x37, 0x38], // embedded zero + reduced
+    ];
+    for &enc in golden {
+        check(enc, 0);
+    }
+
+    // Large seeded-random corpus.
+    let mut rng = Rng::new(0xC0B5_0FF1_CE00_D1CE);
+    for &s in &SENTINELS {
+        for _ in 0..4000 {
+            // Valid encodings of random packets exercise reduced blocks,
+            // embedded zeros, and high length codes on the accept path.
+            let packet = random_packet(&mut rng, 700);
+            let encoded = cobsr::encode_to_vec_with_sentinel(&packet, s);
+            check(&encoded, s);
+            let mut buf = encoded.clone();
+            let n = cobsr::decode_in_place_with_sentinel(&mut buf, s).unwrap();
+            assert_eq!(&buf[..n], &packet[..]);
+
+            // Arbitrary raw buffers exercise the reject path (ZeroByte) and, when
+            // short, the reduced-block interpretation of a code that points past
+            // the end (which COBS/R accepts rather than reporting Truncated).
+            let raw = random_packet(&mut rng, 40);
+            check(&raw, s);
+        }
+    }
+}
+
 /// Frame a list of packets onto one wire buffer (encoding + trailing delimiter).
 fn frame_all(packets: &[Vec<u8>], reduced: bool, sentinel: u8) -> Vec<u8> {
     let mut wire = Vec::new();
