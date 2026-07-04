@@ -47,6 +47,15 @@ prost = "0.14"
 # Used only by `tests/derives.rs` to round-trip an error through JSON and prove
 # the optional `serde` derive works.
 serde_json = "1"
+# Micro-benchmark harness for `benches/throughput.rs`. Dev-only, so it never
+# reaches library consumers. `default-features = false` drops the heavy plotters
+# and rayon defaults; `cargo_bench_support` is re-enabled because it is what lets
+# the benchmark run under `cargo bench`.
+criterion = { version = "0.5", default-features = false, features = ["cargo_bench_support"] }
+
+[[bench]]
+name = "throughput"
+harness = false
 
 [lints.rust]
 missing_docs = "warn"

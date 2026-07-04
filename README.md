@@ -159,6 +159,17 @@ escape-based schemes (PPP, SLIP, HDLC) can *double* the packet in the worst case
 `cobsr` (COBS/R) can reach zero overhead. These bounds are what `max_encoded_len`
 and `encoding_overhead` return.
 
+## Benchmarks
+
+Throughput on a 1 KiB payload (`cargo bench`, criterion), on an AMD Ryzen 7
+3800XT under WSL2 — indicative, not a controlled benchmark:
+
+| Operation | Throughput |
+| --------- | ---------- |
+| COBS encode | ~835 MiB/s |
+| COBS decode | ~1.40 GiB/s |
+| COBS/R encode | ~832 MiB/s |
+
 ## Background
 
 Stuart Cheshire and Mary Baker, "Consistent Overhead Byte Stuffing",
