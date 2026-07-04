@@ -136,6 +136,15 @@ rx.push(&chunk, |frame| match frame {
 });
 ```
 
+### Framing Protocol Buffers over serial
+
+COBS is the standard way to frame **Protobuf** on a UART/RS-485 link: protobuf
+serializes a message but doesn't delimit it, and COBS supplies the missing
+`0x00`-delimited framing — with instant resync after line noise, unlike
+length-prefixing. See [`examples/protobuf_cobs.rs`](examples/protobuf_cobs.rs)
+for a runnable device→host demo (`cargo run --example protobuf_cobs`) that
+survives a corrupted frame.
+
 ## Overhead
 
 COBS overhead is *data-independent*. Encoding an `n`-byte packet produces at most

@@ -29,6 +29,11 @@ alloc = []
 # Enables `std` (implies `alloc`). Reserved for future std-only conveniences.
 std = ["alloc"]
 
+[dev-dependencies]
+# Real Protocol Buffers, used only by the `protobuf_cobs` example. Dev-only, so
+# the published crate stays dependency-free for library users.
+prost = "0.14"
+
 [lints.rust]
 missing_docs = "warn"
 unsafe_code = "forbid"
