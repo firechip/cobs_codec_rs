@@ -1,8 +1,8 @@
 [package]
 name = "cobs_codec_rs"
-version = "1.1.0"
-edition = "2021"
-rust-version = "1.81"
+version = "1.2.0"
+edition = "2024"
+rust-version = "1.85"
 description = "Consistent Overhead Byte Stuffing (COBS) and COBS/R codec: no_std, zero-dependency, for zero-free framing of serial and packet byte streams."
 authors = ["Alexander Salas Bastidas <ajsb85@firechip.dev>"]
 license = "MIT"
@@ -12,6 +12,12 @@ documentation = "https://docs.rs/cobs_codec_rs"
 readme = "README.md"
 keywords = ["cobs", "serial", "framing", "no-std", "embedded"]
 categories = ["encoding", "embedded", "no-std"]
+
+[package.metadata.docs.rs]
+# Document every feature, and load KaTeX so the overhead math renders. KaTeX is
+# documentation-support JavaScript, which docs.rs permits; it does no tracking.
+all-features = true
+rustdoc-args = ["--html-in-header", "docs/katex-header.html"]
 
 [features]
 default = ["std"]

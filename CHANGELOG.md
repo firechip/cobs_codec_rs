@@ -3,6 +3,21 @@
 All notable changes to this crate are documented here. This project adheres to
 [Semantic Versioning](https://semver.org).
 
+## 1.2.0
+
+### Changed
+
+- Adopted **Rust edition 2024**; the minimum supported Rust version is now
+  **1.85** (required by the edition). No API changes.
+- Modernised CI: bumped `actions/checkout` to v7 and pinned the MSRV job's
+  toolchain to Rust 1.85.
+
+### Documentation
+
+- The Cheshire & Baker (1999) overhead bounds now render as math on docs.rs (via
+  KaTeX): the encoded length is at most $n + \lceil n/254 \rceil$ bytes, and
+  `max_encoded_len` / `encoding_overhead` document their closed forms.
+
 ## 1.1.0
 
 ### Added

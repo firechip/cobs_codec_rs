@@ -7,7 +7,7 @@
 //! allocating (usable in pure `no_std`); [`FrameDecoder`] (behind the `alloc`
 //! feature) does the same into owned [`Vec`]s.
 
-use crate::{cobs, DecodeError, DELIMITER};
+use crate::{DELIMITER, DecodeError, cobs};
 
 #[cfg(feature = "alloc")]
 use crate::cobsr;

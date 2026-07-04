@@ -38,10 +38,10 @@ USB, TCP and other byte streams — ideal for embedded and robotics protocols.
 
 ```toml
 [dependencies]
-cobs_codec_rs = "1.1"
+cobs_codec_rs = "1.2"
 
 # no_std, no allocator:
-# cobs_codec_rs = { version = "1.1", default-features = false }
+# cobs_codec_rs = { version = "1.2", default-features = false }
 ```
 
 ## Usage
@@ -85,9 +85,15 @@ rx.push(&chunk, |frame| match frame {
 
 ## Overhead
 
-COBS overhead is data-independent: at most `⌈n / 254⌉` extra bytes for `n` input
-bytes (and always ≥ 1). Compare escape-based schemes (PPP/SLIP), whose worst case
-*doubles* the packet.
+COBS overhead is *data-independent*. Encoding an `n`-byte packet produces at most
+
+$$ n + \left\lceil \frac{n}{254} \right\rceil $$
+
+bytes (one extra byte per 254, rounded up), so the overhead is bounded by
+$\left\lceil n/254 \right\rceil$ and is always at least one byte. By contrast,
+escape-based schemes (PPP, SLIP, HDLC) can *double* the packet in the worst case.
+`cobsr` (COBS/R) can reach zero overhead. These bounds are what `max_encoded_len`
+and `encoding_overhead` return.
 
 ## Background
 

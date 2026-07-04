@@ -37,6 +37,31 @@
 //! assert_eq!(&buf[..n], &[0x02, 0x11, 0x02, 0x22]);
 //! ```
 //!
+//! # Encoding overhead
+//!
+//! COBS has a *tight, data-independent* bound on overhead. Encoding an $n$-byte
+//! packet yields at most
+//!
+//! $$ n + \left\lceil \frac{n}{254} \right\rceil $$
+//!
+//! bytes (one extra byte per 254, rounded up), so the overhead $o(n)$ obeys
+//!
+//! $$ 1 \le o(n) \le \left\lceil \frac{n}{254} \right\rceil \quad (n \ge 1) $$
+//!
+//! and [`max_encoded_len`] and [`encoding_overhead`] return exactly these
+//! worst-case bounds. By contrast, escape-based framing (PPP, SLIP, HDLC) can
+//! *double* a packet in the worst case, an overhead of up to $n$ bytes, because
+//! any byte may need escaping.
+//!
+//! The bound follows from the block structure: COBS emits *blocks*, each a
+//! *code byte* $c$ followed by $c - 1$ non-zero data bytes. A code $c \lt 255$
+//! stands for those bytes then an implicit zero; $c = 255$ carries a full run of
+//! $254$ non-zero bytes (see [`MAX_BLOCK_LEN`]) with no trailing zero. At most
+//! one code byte is spent per 254 data bytes, so an $n$-byte packet needs at
+//! most $\left\lceil \frac{n}{254} \right\rceil$ of them. [`cobsr`] (COBS/R)
+//! drops the final code byte when the last data byte can stand in for it,
+//! reaching a best case of *zero* overhead.
+//!
 //! See "Consistent Overhead Byte Stuffing" by Stuart Cheshire and Mary Baker,
 //! IEEE/ACM Transactions on Networking, Vol. 7, No. 2, April 1999.
 
@@ -63,7 +88,9 @@ pub const MAX_BLOCK_LEN: usize = 254;
 /// when encoding a message of `source_len` bytes.
 ///
 /// COBS adds at most one byte per 254 bytes of input (rounded up), and at least
-/// one byte for any message including the empty one.
+/// one byte for any message including the empty one. In closed form this is
+/// $\lceil n/254 \rceil$ for a non-empty message of $n$ bytes, and $1$ for the
+/// empty message.
 ///
 /// ```
 /// use cobs_codec_rs::encoding_overhead;
@@ -82,7 +109,8 @@ pub const fn encoding_overhead(source_len: usize) -> usize {
 
 /// Returns the maximum possible length, in bytes, of the COBS (or COBS/R)
 /// encoding of a message of `source_len` bytes. Useful for sizing an encode
-/// buffer.
+/// buffer. For a message of $n$ bytes this is $n + \lceil n/254 \rceil$ (and
+/// $1$ when $n = 0$).
 ///
 /// ```
 /// use cobs_codec_rs::max_encoded_len;

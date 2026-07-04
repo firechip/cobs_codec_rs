@@ -3,7 +3,7 @@
 #![allow(clippy::pedantic, missing_docs)]
 
 use cobs_codec_rs::framing::StreamDecoder;
-use cobs_codec_rs::{cobs, cobsr, max_encoded_len, DecodeError};
+use cobs_codec_rs::{DecodeError, cobs, cobsr, max_encoded_len};
 
 /// Tiny deterministic xorshift PRNG (keeps the crate dependency-free).
 struct Rng(u64);
@@ -193,9 +193,10 @@ fn stream_decoder_signals_output_too_small() {
             errs.push(e);
         }
     });
-    assert!(errs
-        .iter()
-        .any(|e| matches!(e, DecodeError::OutputTooSmall)));
+    assert!(
+        errs.iter()
+            .any(|e| matches!(e, DecodeError::OutputTooSmall))
+    );
 }
 
 #[test]

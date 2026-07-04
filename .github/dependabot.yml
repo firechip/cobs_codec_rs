@@ -22,3 +22,7 @@ updates:
       - "github-actions"
     commit-message:
       prefix: "ci"
+    ignore:
+      # The msrv job pins dtolnay/rust-toolchain to the crate's declared MSRV on
+      # purpose; raise it only when bumping rust-version, never automatically.
+      - dependency-name: "dtolnay/rust-toolchain"

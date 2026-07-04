@@ -1,7 +1,7 @@
 #![allow(clippy::pedantic, missing_docs)]
 
-use cobs_codec_rs::framing::{frame, frame_reduced_to_vec, frame_to_vec, FrameDecoder};
 use cobs_codec_rs::DELIMITER;
+use cobs_codec_rs::framing::{FrameDecoder, frame, frame_reduced_to_vec, frame_to_vec};
 
 #[test]
 fn frame_appends_delimiter() {

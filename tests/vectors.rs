@@ -2,7 +2,7 @@
 // suites. Test-internal casts don't need pedantic scrutiny.
 #![allow(clippy::pedantic, missing_docs)]
 
-use cobs_codec_rs::{cobs, cobsr, encoding_overhead, max_encoded_len, DecodeError};
+use cobs_codec_rs::{DecodeError, cobs, cobsr, encoding_overhead, max_encoded_len};
 
 fn ascii(s: &str) -> Vec<u8> {
     s.as_bytes().to_vec()
