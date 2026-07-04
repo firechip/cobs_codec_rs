@@ -69,6 +69,59 @@ let n = cobs::encode(&src, &mut buf);
 assert_eq!(&buf[..n], &[0x02, 0x11, 0x02, 0x22]);
 ```
 
+With a custom sentinel byte, so a non-`0x00` byte delimits frames (both `cobs`
+and `cobsr`, slice and `*_to_vec` variants):
+
+```rust
+use cobs_codec_rs::cobs;
+
+// 0xAA delimits frames instead of 0x00; the encoded output never contains it.
+// (`sentinel == 0` is identical to the plain codec.)
+let encoded = cobs::encode_to_vec_with_sentinel(&[0x11, 0xAA, 0x22], 0xAA);
+assert_eq!(encoded, [0xAE, 0xBB, 0x00, 0x88]); // no 0xAA byte
+assert_eq!(
+    cobs::decode_to_vec_with_sentinel(&encoded, 0xAA).unwrap(),
+    [0x11, 0xAA, 0x22],
+);
+```
+
+Decoding in place, without a second buffer (basic COBS only):
+
+```rust
+use cobs_codec_rs::cobs;
+
+// COBS never expands on decode, so it can decode within the input buffer; the
+// decoded bytes end up in `buf[..len]`.
+let mut buf = [0x03, 0x11, 0x22, 0x02, 0x33];
+let len = cobs::decode_in_place(&mut buf).unwrap();
+assert_eq!(&buf[..len], &[0x11, 0x22, 0x00, 0x33]);
+```
+
+Reassembling a sentinel-delimited stream with no allocator, into a fixed buffer:
+
+```rust
+use cobs_codec_rs::cobs;
+use cobs_codec_rs::framing::StreamDecoder;
+
+// Encode a packet with sentinel 0xAA, then delimit it with an 0xAA byte.
+let mut wire = [0u8; 16];
+let n = cobs::encode_with_sentinel(&[0x11, 0x00, 0x22], &mut wire, 0xAA);
+wire[n] = 0xAA;
+
+// Reassemble it into a fixed scratch buffer — no allocation anywhere.
+let mut scratch = [0u8; 8];
+let mut decoder = StreamDecoder::new(&mut scratch).sentinel(0xAA); // .reduced(true) for COBS/R
+
+let mut out = [0u8; 8];
+let mut out_len = 0;
+decoder.push(&wire[..n + 1], |frame| {
+    let frame = frame.unwrap();
+    out[..frame.len()].copy_from_slice(frame);
+    out_len = frame.len();
+});
+assert_eq!(&out[..out_len], &[0x11, 0x00, 0x22]);
+```
+
 Reading a delimited serial stream (needs `alloc`):
 
 ```rust
