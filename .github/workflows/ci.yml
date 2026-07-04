@@ -65,8 +65,14 @@ jobs:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Download shared conformance vectors
-        run: curl -sSfL -o vectors.jsonl https://raw.githubusercontent.com/firechip/cobs-conformance/v1.0.0/vectors/vectors.jsonl
+        run: |
+          base=https://raw.githubusercontent.com/firechip/cobs-conformance/v1.1.0/vectors
+          curl -sSfL -o vectors.jsonl "$base/vectors.jsonl"
+          curl -sSfL -o sentinel.jsonl "$base/sentinel.jsonl"
+          curl -sSfL -o errors.jsonl "$base/errors.jsonl"
       - name: Check conformance
         env:
           COBS_CONFORMANCE_VECTORS: ${{ github.workspace }}/vectors.jsonl
-        run: cargo test --test conformance -- --nocapture
+          COBS_CONFORMANCE_SENTINEL: ${{ github.workspace }}/sentinel.jsonl
+          COBS_CONFORMANCE_ERRORS: ${{ github.workspace }}/errors.jsonl
+        run: cargo test --test conformance --all-features -- --nocapture
