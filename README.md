@@ -22,9 +22,15 @@ USB, TCP and other byte streams — ideal for embedded and robotics protocols.
 - **Basic COBS** and **COBS/R (Reduced)** encode/decode.
 - **`no_std` and zero dependencies** — the core `encode`/`decode` work on
   caller-provided slices, allocating nothing.
-- **`alloc` conveniences** (`*_to_vec`) and a streaming
+- **Configurable sentinel** — `*_with_sentinel` variants frame with any
+  delimiter byte, not just `0x00`.
+- **In-place decoding** — `cobs::decode_in_place` decodes without a second
+  buffer.
+- **Allocation-free streaming** — `framing::StreamDecoder` reassembles
+  delimited frames into a fixed buffer in pure `no_std`; the `alloc` feature adds
+  the owned-`Vec`
   [`FrameDecoder`](https://docs.rs/cobs_codec_rs/latest/cobs_codec_rs/framing/struct.FrameDecoder.html)
-  for `0x00`-delimited serial links, behind the default `std`/`alloc` features.
+  and `*_to_vec` conveniences.
 - **`const fn`** size helpers (`max_encoded_len`, `encoding_overhead`) for
   compile-time buffer sizing.
 
@@ -32,10 +38,10 @@ USB, TCP and other byte streams — ideal for embedded and robotics protocols.
 
 ```toml
 [dependencies]
-cobs_codec_rs = "1.0"
+cobs_codec_rs = "1.1"
 
 # no_std, no allocator:
-# cobs_codec_rs = { version = "1.0", default-features = false }
+# cobs_codec_rs = { version = "1.1", default-features = false }
 ```
 
 ## Usage

@@ -4,4 +4,4 @@ version = 3
 
 [[package]]
 name = "cobs_codec_rs"
-version = "1.0.0"
+version = "1.1.0"

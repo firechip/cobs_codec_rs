@@ -7,9 +7,12 @@
 //! popular in embedded and robotics protocols.
 //!
 //! This crate is `#![no_std]` and dependency-free. The core [`cobs`] and
-//! [`cobsr`] `encode`/`decode` functions work on caller-provided slices; the
-//! `alloc` feature (enabled by default via `std`) adds `*_to_vec` conveniences
-//! and the [`framing::FrameDecoder`].
+//! [`cobsr`] `encode`/`decode` functions work on caller-provided slices, with
+//! `*_with_sentinel` variants for a non-`0x00` delimiter and
+//! [`cobs::decode_in_place`] for zero-copy decoding. The allocation-free
+//! [`framing::StreamDecoder`] reassembles delimited frames into a fixed buffer.
+//! The `alloc` feature (enabled by default via `std`) adds `*_to_vec`
+//! conveniences and the owned-`Vec` [`framing::FrameDecoder`].
 //!
 //! # Example
 //!

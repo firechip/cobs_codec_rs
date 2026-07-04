@@ -63,6 +63,28 @@ pub fn encode(src: &[u8], dst: &mut [u8]) -> usize {
     write_index
 }
 
+/// Encodes `src` with basic COBS into `dst` using an arbitrary `sentinel` byte
+/// instead of `0x00`, returning the number of bytes written.
+///
+/// The output never contains the `sentinel` byte, so `sentinel` (rather than
+/// `0x00`) may be used to delimit packets. Choosing a sentinel that rarely
+/// occurs in your payload minimises overhead. `sentinel == 0` is identical to
+/// [`encode`].
+///
+/// # Panics
+///
+/// Panics if `dst` is shorter than [`max_encoded_len`]`(src.len())`.
+#[must_use]
+pub fn encode_with_sentinel(src: &[u8], dst: &mut [u8], sentinel: u8) -> usize {
+    let n = encode(src, dst);
+    if sentinel != 0 {
+        for byte in &mut dst[..n] {
+            *byte ^= sentinel;
+        }
+    }
+    n
+}
+
 /// Decodes basic-COBS `src` into `dst`, returning the number of bytes written.
 ///
 /// The empty input decodes to nothing (returns `0`). `src` must be a single
@@ -74,6 +96,23 @@ pub fn encode(src: &[u8], dst: &mut [u8]) -> usize {
 /// not valid COBS, or [`DecodeError::OutputTooSmall`] if `dst` is shorter than
 /// the decoded output (which never exceeds `src.len()`).
 pub fn decode(src: &[u8], dst: &mut [u8]) -> Result<usize, DecodeError> {
+    decode_with_sentinel(src, dst, 0)
+}
+
+/// Decodes basic-COBS `src` that was encoded with an arbitrary `sentinel` byte
+/// (see [`encode_with_sentinel`]) into `dst`, returning the number of bytes
+/// written. `sentinel == 0` is identical to [`decode`].
+///
+/// # Errors
+///
+/// Returns [`DecodeError::ZeroByte`] (the encoded input contained the
+/// `sentinel`) or [`DecodeError::Truncated`] if `src` is not valid, or
+/// [`DecodeError::OutputTooSmall`] if `dst` is shorter than the decoded output.
+pub fn decode_with_sentinel(
+    src: &[u8],
+    dst: &mut [u8],
+    sentinel: u8,
+) -> Result<usize, DecodeError> {
     let src_len = src.len();
     if src_len == 0 {
         return Ok(0);
@@ -83,7 +122,7 @@ pub fn decode(src: &[u8], dst: &mut [u8]) -> Result<usize, DecodeError> {
     let mut index = 0;
 
     loop {
-        let code = src[index];
+        let code = src[index] ^ sentinel;
         if code == 0 {
             return Err(DecodeError::ZeroByte { index });
         }
@@ -91,7 +130,7 @@ pub fn decode(src: &[u8], dst: &mut [u8]) -> Result<usize, DecodeError> {
         let block_end = index + usize::from(code) - 1;
         let copy_end = block_end.min(src_len);
         while index < copy_end {
-            let byte = src[index];
+            let byte = src[index] ^ sentinel;
             if byte == 0 {
                 return Err(DecodeError::ZeroByte { index });
             }
@@ -119,12 +158,91 @@ pub fn decode(src: &[u8], dst: &mut [u8]) -> Result<usize, DecodeError> {
     Ok(write_index)
 }
 
+/// Decodes basic-COBS data in place, overwriting `buf` with the decoded output
+/// and returning its length. The decoded bytes occupy `buf[..len]`.
+///
+/// This needs no output buffer: COBS decoding never expands, so the write
+/// position always trails the read position.
+///
+/// # Errors
+///
+/// Returns [`DecodeError::ZeroByte`] or [`DecodeError::Truncated`] if `buf` is
+/// not valid COBS. [`DecodeError::OutputTooSmall`] is never returned.
+pub fn decode_in_place(buf: &mut [u8]) -> Result<usize, DecodeError> {
+    decode_in_place_with_sentinel(buf, 0)
+}
+
+/// Decodes basic-COBS data that was encoded with an arbitrary `sentinel` byte in
+/// place, overwriting `buf` with the decoded output and returning its length.
+/// `sentinel == 0` is identical to [`decode_in_place`].
+///
+/// # Errors
+///
+/// Returns [`DecodeError::ZeroByte`] or [`DecodeError::Truncated`] if `buf` is
+/// not valid. [`DecodeError::OutputTooSmall`] is never returned.
+pub fn decode_in_place_with_sentinel(buf: &mut [u8], sentinel: u8) -> Result<usize, DecodeError> {
+    let src_len = buf.len();
+    if src_len == 0 {
+        return Ok(0);
+    }
+
+    let mut write_index = 0;
+    let mut index = 0;
+
+    loop {
+        let code = buf[index] ^ sentinel;
+        if code == 0 {
+            return Err(DecodeError::ZeroByte { index });
+        }
+        index += 1;
+        let block_end = index + usize::from(code) - 1;
+        let copy_end = block_end.min(src_len);
+        while index < copy_end {
+            let byte = buf[index] ^ sentinel;
+            if byte == 0 {
+                return Err(DecodeError::ZeroByte { index });
+            }
+            // write_index < index throughout, so this never clobbers unread
+            // input.
+            buf[write_index] = byte;
+            write_index += 1;
+            index += 1;
+        }
+        if block_end > src_len {
+            return Err(DecodeError::Truncated {
+                index: block_end - usize::from(code),
+            });
+        }
+        if block_end < src_len {
+            if code < 0xFF {
+                buf[write_index] = 0;
+                write_index += 1;
+            }
+        } else {
+            break;
+        }
+    }
+
+    Ok(write_index)
+}
+
 /// Encodes `src` with basic COBS, returning a newly allocated [`Vec`].
 #[cfg(feature = "alloc")]
 #[must_use]
 pub fn encode_to_vec(src: &[u8]) -> Vec<u8> {
     let mut dst = alloc::vec![0u8; max_encoded_len(src.len())];
     let n = encode(src, &mut dst);
+    dst.truncate(n);
+    dst
+}
+
+/// Encodes `src` with basic COBS and an arbitrary `sentinel` byte, returning a
+/// newly allocated [`Vec`].
+#[cfg(feature = "alloc")]
+#[must_use]
+pub fn encode_to_vec_with_sentinel(src: &[u8], sentinel: u8) -> Vec<u8> {
+    let mut dst = alloc::vec![0u8; max_encoded_len(src.len())];
+    let n = encode_with_sentinel(src, &mut dst, sentinel);
     dst.truncate(n);
     dst
 }
@@ -138,6 +256,20 @@ pub fn encode_to_vec(src: &[u8]) -> Vec<u8> {
 pub fn decode_to_vec(src: &[u8]) -> Result<Vec<u8>, DecodeError> {
     let mut dst = alloc::vec![0u8; src.len()];
     let n = decode(src, &mut dst)?;
+    dst.truncate(n);
+    Ok(dst)
+}
+
+/// Decodes basic-COBS `src` that was encoded with an arbitrary `sentinel` byte,
+/// returning a newly allocated [`Vec`].
+///
+/// # Errors
+///
+/// Returns a [`DecodeError`] if `src` is not valid.
+#[cfg(feature = "alloc")]
+pub fn decode_to_vec_with_sentinel(src: &[u8], sentinel: u8) -> Result<Vec<u8>, DecodeError> {
+    let mut dst = alloc::vec![0u8; src.len()];
+    let n = decode_with_sentinel(src, &mut dst, sentinel)?;
     dst.truncate(n);
     Ok(dst)
 }
