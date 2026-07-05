@@ -170,6 +170,13 @@ Throughput on a 1 KiB payload (`cargo bench`, criterion), on an AMD Ryzen 7
 | COBS decode | ~1.40 GiB/s |
 | COBS/R encode | ~832 MiB/s |
 
+## Integrations
+
+The core stays `no_std` and dependency-free, so framework glue lives in your
+project rather than in the crate. [INTEGRATIONS.md](INTEGRATIONS.md) has verified
+copy-paste recipes — a `tokio_util::codec` for `Framed` streams, and the
+`embedded-io` shape for `no_std` targets — all built on the public API.
+
 ## Background
 
 Stuart Cheshire and Mary Baker, "Consistent Overhead Byte Stuffing",
