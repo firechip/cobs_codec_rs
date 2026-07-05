@@ -4,7 +4,7 @@ Thanks for your interest in improving `cobs_codec_rs`!
 
 ## Getting started
 
-A stable Rust toolchain (>= 1.81, the crate's MSRV) with `rustfmt` and `clippy`:
+A stable Rust toolchain (>= 1.85, the crate's MSRV) with `rustfmt` and `clippy`:
 
 ```console
 git clone https://github.com/firechip/cobs_codec_rs.git
@@ -72,6 +72,32 @@ use `!` (`feat!:`) or a `BREAKING CHANGE:` footer.
 
 This is enforced locally by `tbdflow commit` and in CI by the **Commit lint**
 workflow.
+
+## Releasing
+
+Publishing to crates.io is automated from a signed `v*` tag, but the **GitHub
+Release is created by hand — don't skip it.** The full checklist:
+
+1. Bump `version` in **`Cargo.toml`** *and* the `cobs_codec_rs` entry in
+   **`Cargo.lock`** (a `cargo build` syncs it). Skipping the lockfile makes
+   `cargo publish` fail on a dirty working tree.
+2. Add a `## X.Y.Z` section to [`CHANGELOG.md`](CHANGELOG.md).
+3. Commit (`chore: release X.Y.Z`) and tag it **signed**:
+   `git tag -s vX.Y.Z -m "cobs_codec_rs X.Y.Z"`; push `main` and the tag.
+4. The tag triggers [`release.yml`](.github/workflows/release.yml), which
+   publishes to **crates.io** via Trusted Publishing (OIDC) — no token secret.
+5. Create the **GitHub Release** and attach the exact published artifact:
+
+   ```console
+   curl -fsSL -H "User-Agent: you@example.com" \
+     https://crates.io/api/v1/crates/cobs_codec_rs/X.Y.Z/download \
+     -o cobs_codec_rs-X.Y.Z.crate
+   gh release create vX.Y.Z --verify-tag --title "cobs_codec_rs X.Y.Z" \
+     --notes-file notes.md cobs_codec_rs-X.Y.Z.crate
+   ```
+
+   The description should mirror the crates.io release: the `CHANGELOG.md`
+   highlights, an install snippet, and the crates.io / docs.rs links.
 
 ## License
 
